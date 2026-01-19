@@ -5,6 +5,11 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
+      - name: Disable AppArmor
+        run: |
+          sudo systemctl stop apparmor
+          sudo systemctl disable apparmor   
+
       - name: Checkout Code
         uses: actions/checkout@v4
 

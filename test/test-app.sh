@@ -7,39 +7,58 @@ TEST_NAME="DevOpsEngineer"
 PORT=3001
 
 echo "--- 1. Cleaning up old tests ---"
-nerdctl stop $APP_NAME > /dev/null 2>&1
-nerdctl rm $APP_NAME > /dev/null 2>&1
+nerdctl stop $APP_NAME > /dev/null 2>&1 || true
+nerdctl rm $APP_NAME > /dev/null 2>&1 || true
 
 echo "--- 2. Starting container in Dev mode ---"
-# Note: Ensure internal port 3000 matches your app.js listener
+# Mapping host 3001 to internal 3000
 nerdctl run -d --name $APP_NAME -p $PORT:3000 -e NODE_ENV=development $IMAGE_NAME:latest
 
-echo "--- 3. Waiting for server to spin up (Dynamic Healthcheck) ---"
-MAX_RETRIES=10
-RETRY_COUNT=0
-URL="http://localhost:$PORT/hello/$TEST_NAME"
-
-# Poll the endpoint until it returns a 200 status or hits the retry limit
-until $(curl -sSf "$URL" > /dev/null 2>&1); do
-    RETRY_COUNT=$((RETRY_COUNT + 1))
-    if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-        echo "FAILURE: Server failed to become healthy after $MAX_RETRIES attempts."
+echo "--- 3. Verifying nerdctl port mapping ---"
+MAX_PORT_RETRIES=10
+for i in $(seq 1 $MAX_PORT_RETRIES); do
+    # Verify the rootless forwarder is active
+    if nerdctl port $APP_NAME | grep -q "3000/tcp -> 0.0.0.0:$PORT"; then
+        echo "SUCCESS: nerdctl confirmed port $PORT is mapped."
+        break
+    fi
+    if [ $i -eq $MAX_PORT_RETRIES ]; then
+        echo "FAILURE: Port mapping failed to initialize."
         nerdctl logs $APP_NAME
         exit 1
     fi
-    echo "Attempt $RETRY_COUNT/$MAX_RETRIES: Waiting for $URL..."
+    echo "Attempt $i: Waiting for port mapping..."
     sleep 2
 done
 
-echo "--- 4. Testing Endpoint: $URL ---"
+echo "--- 4. Waiting for server to spin up... ---"
+URL="http://localhost:$PORT/hello/$TEST_NAME"
+MAX_RETRIES=15
+for i in $(seq 1 $MAX_RETRIES); do
+    if curl -sSf "$URL" > /dev/null 2>&1; then
+        echo "--- Server is UP ---"
+        break
+    fi
+    if [ $i -eq $MAX_RETRIES ]; then
+        echo "FAILURE: App did not respond at $URL"
+        nerdctl logs $APP_NAME
+        exit 1
+    fi
+    echo "Attempt $i/$MAX_RETRIES: Waiting for $URL..."
+    sleep 2
+done
+
+echo "--- 5. Testing Endpoint: $URL ---"
 RESPONSE=$(curl -s "$URL")
 
-# Improved validation: Check for the name and the expected status color
+# Verbose check for the specific TEST_NAME
 if [[ $RESPONSE == *"$TEST_NAME"* ]]; then
-    echo "SUCCESS: App returned expected name!"
-    # Verify the Dev environment color is present to confirm branch coverage
+    echo "SUCCESS: App returned expected name: $TEST_NAME"
+    echo "Response Snippet: $(echo $RESPONSE | grep -o "<h1>Hello, .*!</h1>")"
+    
+    # Branch Coverage Check: Verify Dev Color
     if [[ $RESPONSE == *"#f39c12"* ]]; then
-        echo "SUCCESS: Environment styling (Dev) confirmed."
+        echo "VERIFIED: Development styling confirmed (#f39c12)."
     fi
 else
     echo "FAILURE: App did not respond correctly."
@@ -47,7 +66,7 @@ else
     exit 1
 fi
 
-echo "--- 5. Tearing down test container ---"
+echo "--- 6. Tearing down test container ---"
 nerdctl stop $APP_NAME
 nerdctl rm $APP_NAME
-echo "Test Passed!"
+echo "Test Passed for $TEST_NAME!"

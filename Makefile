@@ -7,16 +7,19 @@ NERDCTL    := nerdctl
 # --- Main Targets ---
 .PHONY: all build test run-dev run-prod stop clean help
 
-all: build test ## [Default] Build and run the test suite
+all: scan build test ## [Default] Build and run the test suite
 
-scan: ## SonarQube quality gate scan
+test-unit: ## Run unit tests with code coverage
+	@echo "==> Running Unit Tests..."
+	npm test
+
+scan: test-unit ## Run local SonarQube analysis with coverage data
 	@echo "==> Running SonarQube Scan..."
 	$(NERDCTL) run --rm \
 		-e SONAR_HOST_URL="$(SONAR_HOST_URL)" \
 		-e SONAR_LOGIN="$(SONAR_TOKEN)" \
 		-v "$(PWD):/usr/src" \
 		sonarsource/sonar-scanner-cli
-	@echo "Check your SonarQube dashboard for the Quality Gate result."
 
 build: ## Triggers Packer to build the image via nerdctl and export the tarball
 	@echo "==> Building with Packer..."

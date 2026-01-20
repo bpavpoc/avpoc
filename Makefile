@@ -11,8 +11,8 @@ all: scan build check ## [Default] Build and run the test suite
 
 test: ## Run unit tests with code coverage
 	@echo "==> Running Unit Tests..."
-	npm install --prefix ./src
-	npm test --prefix ./src
+	npm install
+	npm test
 
 scan: test ## Run local SonarQube analysis with coverage data
 	@echo "==> Running SonarQube Scan..."

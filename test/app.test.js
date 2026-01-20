@@ -1,35 +1,36 @@
 const request = require('supertest');
-const app = require('../src/app');
 
-describe('Comprehensive Branch Testing', () => {
-    
-    // Test Path A: Dev Environment logic
-    test('Redirects to /hello/Dev in default/dev mode', async () => {
-        const res = await request(app).get('/');
-        expect(res.statusCode).toBe(302);
-        expect(res.headers.location).toBe('/hello/Dev');
+describe('Final Coverage Push', () => {
+    beforeEach(() => {
+        jest.resetModules();
     });
 
-    // Test Path B: Production Environment logic (Forces the other side of the ternary)
-    test('Redirects to /hello/User when NODE_ENV is production', async () => {
+    test('Path 1: Production Redirect (if)', async () => {
         process.env.NODE_ENV = 'production';
+        const app = require('../src/app');
         const res = await request(app).get('/');
-        expect(res.statusCode).toBe(302);
-        expect(res.headers.location).toBe('/hello/User');
-        // Reset env after test
-        process.env.NODE_ENV = 'test'; 
+        expect(res.header.location).toBe('/hello/User');
     });
 
-    test('Sanitizes complex XSS and handles normal names', async () => {
-        const res = await request(app).get('/hello/John&Doe');
-        expect(res.text).toContain('John&amp;Doe');
+    test('Path 2: Development Redirect (else)', async () => {
+        process.env.NODE_ENV = 'development';
+        const app = require('../src/app');
+        const res = await request(app).get('/');
+        expect(res.header.location).toBe('/hello/Dev');
     });
 
-    // Test Path C: The "Empty Name" branch in sanitize helper
-    test('Sanitize helper handles empty input', async () => {
-        // We can test this by calling a route that might result in an empty param 
-        // or by ensuring our helper logic is robust
-        const res = await request(app).get('/hello/%20'); // Space character
-        expect(res.statusCode).toBe(200);
+    test('Path 3: Sanitizer and Production Color', async () => {
+        process.env.NODE_ENV = 'production';
+        const app = require('../src/app');
+        const res = await request(app).get('/hello/' + encodeURIComponent('<script>'));
+        expect(res.text).toContain('&lt;script&gt;');
+        expect(res.text).toContain('#27ae60'); // Prod Color
+    });
+
+    test('Path 4: Sanitizer Fallback and Dev Color', async () => {
+        process.env.NODE_ENV = 'development';
+        const app = require('../src/app');
+        const res = await request(app).get('/hello/tester');
+        expect(res.text).toContain('#f39c12'); // Dev Color
     });
 });

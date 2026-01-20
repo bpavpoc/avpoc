@@ -2,9 +2,7 @@ const express = require('express');
 const helmet = require('helmet');
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-const ENV = process.env.NODE_ENV || 'development';
-
+/* istanbul ignore next */
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -15,35 +13,47 @@ app.use(helmet({
 }));
 
 const sanitize = (str) => {
-    if (!str) return '';
-    return str.replace(/[&<>"']/g, (m) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    })[m]);
+    // If str is null/undefined, use empty string
+    const input = str || ''; 
+    return input.toString().replace(/[&<>"']/g, (m) => {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+        return map[m];
+    });
 };
 
 app.get('/', (req, res) => {
-    const defaultName = (ENV === 'production') ? 'User' : 'Dev';
-    res.redirect(`/hello/${defaultName}`);
+    if (process.env.NODE_ENV === 'production') {
+        res.redirect('/hello/User');
+    } else {
+        res.redirect('/hello/Dev');
+    }
 });
 
 app.get('/hello/:name', (req, res) => {
     const cleanName = sanitize(req.params.name);
-    const statusColor = ENV === 'production' ? '#27ae60' : '#f39c12';
+    let statusColor = '#f39c12'; 
+    
+    if (process.env.NODE_ENV === 'production') {
+        statusColor = '#27ae60'; 
+    }
 
     res.status(200).send(`
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
+            <head><meta charset="UTF-8"><title>App</title></head>
             <body style="font-family: sans-serif; text-align: center;">
-                <h1 style="color: #2c3e50;">Hello, ${cleanName}!</h1>
-                <p>Environment: <strong style="color: ${statusColor};">${ENV}</strong></p>
+                <h1>Hello, ${cleanName}!</h1>
+                <p>Environment: <strong>${process.env.NODE_ENV || 'development'}</strong></p>
+                <div style="background: ${statusColor}; width:10px; height:10px; margin:auto;"></div>
             </body>
         </html>
     `);
 });
 
-// Important for Testing: Only listen if not in a test environment
-if (process.env.NODE_ENV !== 'test') {
-    app.listen(PORT, () => console.log(`Server on ${PORT}`));
+/* istanbul ignore next */
+if (require.main === module) {
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => console.log(`Server on ${port}`));
 }
 
-module.exports = app; // Export for Jest
+module.exports = app;

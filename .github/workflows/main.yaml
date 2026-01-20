@@ -52,7 +52,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Quality Gate (Enforce >80% Coverage)
+      - name: Quality Gate (Enforce >75% Coverage)
         uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

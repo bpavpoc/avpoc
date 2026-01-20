@@ -20,15 +20,10 @@ jobs:
           # Disabling shallow clones is recommended for improving the relevancy of reporting
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6.2.0
-        with:
-          node-version: 20
-          cache: 'npm'
-
       - name: Install & Test
+        working-directory: ./src 
         run: |
-          npm ci
+          npm install
           npm test -- --coverage
           
       - name: Upload Coverage Artifacts

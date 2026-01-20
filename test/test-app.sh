@@ -1,6 +1,7 @@
 #!/bin/bash
 # test-app.sh
 
+IMAGE_NAME="avpoc-hello-node-app"
 APP_NAME="node-test-instance"
 TEST_NAME="DevOpsEngineer"
 PORT=3001
@@ -10,7 +11,7 @@ nerdctl stop $APP_NAME > /dev/null 2>&1
 nerdctl rm $APP_NAME > /dev/null 2>&1
 
 echo "--- 2. Starting container in Dev mode ---"
-nerdctl run -d --name $APP_NAME -p $PORT:3000 -e NODE_ENV=development hello-node-app:latest
+nerdctl run -d --name $APP_NAME -p $PORT:3000 -e NODE_ENV=development $IMAGE_NAME:latest
 
 echo "--- 3. Waiting for server to spin up... ---"
 sleep 3

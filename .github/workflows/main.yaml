@@ -21,7 +21,15 @@ jobs:
           sudo systemctl restart apparmor.service 
 
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.1
+        with:
+          # Disabling shallow clones is recommended for improving the relevancy of reporting
+          fetch-depth: 0
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v7.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Install nerdctl (Full)
         run: |
@@ -34,7 +42,7 @@ jobs:
           sleep 5
 
       - name: Setup Packer
-        uses: hashicorp/setup-packer@main
+        uses: hashicorp/setup-packer@v3.1.0
 
       - name: Build and Export Image
         run: make build
@@ -44,7 +52,7 @@ jobs:
 
       - name: Upload Verified Artifact
         if: success() # Only upload if the tests pass
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: hello-node-image
           path: hello-node-app.tar

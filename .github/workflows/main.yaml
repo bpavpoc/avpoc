@@ -106,14 +106,14 @@ jobs:
 
       - name: Tag and Push
         env:
-          IMAGE_PATH: ${{ env.REGISTRY }}/${{ github.repository }}
+          IMAGE_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
         run: |
           # Login using global registry variable
           echo "${{ secrets.GITHUB_TOKEN }}" | nerdctl login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
           
           # Tag and Push using global image path
-          nerdctl tag ${{ env.IMAGE_NAME }} ${{ env.IMAGE_PATH }}:latest
-          nerdctl tag ${{ env.IMAGE_NAME }} ${{ env.IMAGE_PATH }}:${{ github.sha }}
+          nerdctl tag ${{ env.IMAGE_NAME }} ${{ env.IMAGE_PATH }}/${{ env.IMAGE_NAME }}:latest
+          nerdctl tag ${{ env.IMAGE_NAME }} ${{ env.IMAGE_PATH }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           
-          nerdctl push ${{ env.IMAGE_PATH }}:latest
-          nerdctl push ${{ env.IMAGE_PATH }}:${{ github.sha }}
+          nerdctl push ${{ env.IMAGE_PATH }}/${{ env.IMAGE_NAME }}:latest
+          nerdctl push ${{ env.IMAGE_PATH }}/${{ env.IMAGE_NAME }}:${{ github.sha }}

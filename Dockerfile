@@ -1,20 +1,19 @@
-# Use a lightweight Node.js base
-FROM node:18-alpine
-
-# Set working directory
+# Stage 1: Build
+FROM node:20-alpine AS builder
 WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
 
-# Copy dependency files first to leverage caching
-COPY package.json ./
+# Stage 2: Production
+FROM node:20-alpine
+RUN apk add --no-cache curl
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/package.json ./package.json
 
-# Install dependencies
-RUN npm install
-
-# Copy the source code
-COPY src/app.js .
-
-# Expose the internal port
 EXPOSE 3000
-
-# Start the application
-ENTRYPOINT ["node", "app.js"]
+USER node
+CMD ["node", "src/app.js"]

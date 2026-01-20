@@ -1,5 +1,5 @@
 variable "image_name" {
-  default = "hello-node-app"
+  default = "avpoc-hello-node-app"
 }
 
 # The null builder is built-in; no plugin block needed
